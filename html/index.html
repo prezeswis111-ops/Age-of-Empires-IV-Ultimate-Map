@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heist Tablet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        #app {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 900px;
+            height: 600px;
+            background: linear-gradient(135deg, #1a1d29 0%, #2d3142 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+
+        #app.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -45%) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .user-details h3 {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .user-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            color: #a0a0a0;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 0, 0, 0.5);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+            height: calc(100% - 90px);
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .card-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 60px;
+            opacity: 0.15;
+        }
+
+        .card h2 {
+            color: white;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 100;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: block;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-header h2 {
+            color: white;
+            font-size: 32px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .heist-list, .blackmarket-list, .leaderboard-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .heist-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .heist-item:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .heist-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .heist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .heist-name {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .difficulty {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .difficulty.Easy {
+            background: rgba(46, 213, 115, 0.2);
+            color: #2ed573;
+        }
+
+        .difficulty.Medium {
+            background: rgba(255, 168, 1, 0.2);
+            color: #ffa801;
+        }
+
+        .difficulty.Hard {
+            background: rgba(255, 71, 87, 0.2);
+            color: #ff4757;
+        }
+
+        .difficulty.Extreme {
+            background: rgba(138, 43, 226, 0.2);
+            color: #8a2be2;
+        }
+
+        .heist-description {
+            color: #a0a0a0;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .heist-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .detail {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .detail-label {
+            color: #6c757d;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .cooldown-timer {
+            color: #ff4757;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .start-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .start-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .blackmarket-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-info h3 {
+            color: white;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .item-stats {
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+
+        .sell-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .amount-input {
+            width: 80px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+        }
+
+        .sell-btn {
+            background: #2ed573;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .sell-btn:hover {
+            background: #26d466;
+            transform: scale(1.05);
+        }
+
+        .leaderboard-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rank {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            width: 50px;
+        }
+
+        .player-name {
+            color: white;
+            font-size: 18px;
+            flex: 1;
+        }
+
+        .earnings {
+            color: #2ed573;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div class="user-info">
+                <div class="avatar">A</div>
+                <div class="user-details">
+                    <h3>Logged in as <span id="playerName">Andrew</span></h3>
+                    <div class="user-stats">
+                        <div class="stat">💰 $<span id="playerCash">110,694</span></div>
+                        <div class="stat">🏆 <span id="playerRep">23,000</span></div>
+                    </div>
+                </div>
+            </div>
+            <button class="close-btn" onclick="closeTablet()">✕</button>
+        </div>
+
+        <div class="content">
+            <div class="card" onclick="openHeists()">
+                <div class="card-icon">🎭</div>
+                <h2>Heist Contracts</h2>
+                <p>All of the available heist/robbery contracts.</p>
+            </div>
+
+            <div class="card" onclick="openBlackmarket()">
+                <div class="card-icon">💵</div>
+                <h2>Blackmarket</h2>
+                <p>Buy tools or sell your valuables.</p>
+            </div>
+
+            <div class="card" onclick="openLeaderboard()">
+                <div class="card-icon">🏆</div>
+                <h2>Leaderboard</h2>
+                <p>Take a look at the top criminals.</p>
+            </div>
+        </div>
+
+        <!-- Heist Modal -->
+        <div id="heistModal" class="modal">
+            <div class="modal-header">
+                <h2>Heist Contracts</h2>
+                <button class="back-btn" onclick="closeModal('heistModal')">← Back</button>
+            </div>
+            <div id="heistList" class="heist-list"></div>
+        </div>
+
+        <!-- Blackmarket Modal -->
+        <div id="blackmarketModal" class="modal">
+            <div class="modal-header">
+                <h2>Blackmarket</h2>
+                <button class="back-btn" onclick="closeModal('blackmarketModal')">← Back</button>
+            </div>
+            <div id="blackmarketList" class="blackmarket-list"></div>
+        </div>
+
+        <!-- Leaderboard Modal -->
+        <div id="leaderboardModal" class="modal">
+            <div class="modal-header">
+                <h2>Leaderboard</h2>
+                <button class="back-btn" onclick="closeModal('leaderboardModal')">← Back</button>
+            </div>
+            <div id="leaderboardList" class="leaderboard-list"></div>
+        </div>
+    </div>
+
+    <script>
+        let contracts = [];
+        let blackmarketItems = [];
+        let leaderboard = [];
+
+        function GetParentResourceName() {
+            let resourceName = 'esx_heist_contracts';
+            if (window.location.href.includes('://nui_')) {
+                resourceName = window.location.pathname.split('/')[2];
+            }
+            return resourceName;
+        }
+
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+
+            switch(data.action) {
+                case 'openTablet':
+                    document.getElementById('app').classList.add('active');
+                    break;
+                case 'setContracts':
+                    contracts = data.contracts;
+                    renderHeists();
+                    break;
+                case 'setBlackmarket':
+                    blackmarketItems = data.items;
+                    renderBlackmarket();
+                    break;
+                case 'setLeaderboard':
+                    leaderboard = data.leaderboard;
+                    renderLeaderboard();
+                    break;
+            }
+        });
+
+        function closeTablet() {
+            document.getElementById('app').classList.remove('active');
+            fetch(`https://${GetParentResourceName()}/closeTablet`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+        }
+
+        function openHeists() {
+            document.getElementById('heistModal').classList.add('active');
+        }
+
+        function openBlackmarket() {
+            document.getElementById('blackmarketModal').classList.add('active');
+        }
+
+        function openLeaderboard() {
+            document.getElementById('leaderboardModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function renderHeists() {
+            const list = document.getElementById('heistList');
+            list.innerHTML = '';
+
+            contracts.forEach(contract => {
+                const canStart = contract.canStart && contract.hasItems;
+                const cooldownText = contract.cooldownRemaining > 0 
+                    ? `Cooldown: ${Math.ceil(contract.cooldownRemaining / 60)} minutes`
+                    : '';
+
+                const item = document.createElement('div');
+                item.className = `heist-item ${!canStart ? 'disabled' : ''}`;
+                item.innerHTML = `
+                    <div class="heist-header">
+                        <div class="heist-name">${contract.name}</div>
+                        <div class="difficulty ${contract.difficulty}">${contract.difficulty}</div>
+                    </div>
+                    <div class="heist-description">${contract.description}</div>
+                    <div class="heist-details">
+                        <div class="detail">
+                            <div class="detail-label">Players</div>
+                            <div class="detail-value">${contract.minPlayers}-${contract.maxPlayers}</div>
+                        </div>
+                        <div class="detail">
+                            <div class="detail-label">Payout</div>
+                            <div class="detail-value">${contract.payout.min.toLocaleString()}-${contract.payout.max.toLocaleString()}</div>
+                        </div>
+                        <div class="detail">
+                            <div class="detail-label">Stages</div>
+                            <div class="detail-value">${contract.stages}</div>
+                        </div>
+                    </div>
+                    ${!contract.hasItems ? `<div class="cooldown-timer">Missing: ${contract.missingItems.join(', ')}</div>` : ''}
+                    ${cooldownText ? `<div class="cooldown-timer">${cooldownText}</div>` : ''}
+                    <button class="start-btn" ${!canStart ? 'disabled' : ''} onclick="startHeist('${contract.id}')">
+                        ${canStart ? 'Start Heist' : 'Not Available'}
+                    </button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function startHeist(heistId) {
+            fetch(`https://${GetParentResourceName()}/startHeist`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ heistId })
+            });
+        }
+
+        function renderBlackmarket() {
+            const list = document.getElementById('blackmarketList');
+            list.innerHTML = '';
+
+            if (blackmarketItems.length === 0) {
+                list.innerHTML = '<p style="color: #a0a0a0; text-align: center; padding: 40px;">No items to sell</p>';
+                return;
+            }
+
+            blackmarketItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'blackmarket-item';
+                div.innerHTML = `
+                    <div class="item-info">
+                        <h3>${item.label}</h3>
+                        <div class="item-stats">
+                            Price: ${item.price.toLocaleString()} | 
+                            You have: ${item.count} | 
+                            Total value: ${item.totalValue.toLocaleString()}
+                        </div>
+                    </div>
+                    <div class="sell-section">
+                        <input type="number" class="amount-input" id="amount-${item.item}" min="1" max="${item.count}" value="1">
+                        <button class="sell-btn" onclick="sellItem('${item.item}', ${item.count})">Sell</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function sellItem(itemName, maxCount) {
+            const amount = parseInt(document.getElementById(`amount-${itemName}`).value);
+            if (amount > 0 && amount <= maxCount) {
+                fetch(`https://${GetParentResourceName()}/sellItem`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item: itemName, amount })
+                });
+            }
+        }
+
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = '';
+
+            if (leaderboard.length === 0) {
+                list.innerHTML = '<p style="color: #a0a0a0; text-align: center; padding: 40px;">No data available</p>';
+                return;
+            }
+
+            leaderboard.forEach((player, index) => {
+                const div = document.createElement('div');
+                div.className = 'leaderboard-item';
+                div.innerHTML = `
+                    <div class="rank">#${index + 1}</div>
+                    <div class="player-name">${player.identifier}</div>
+                    <div class="earnings">${player.total_earned.toLocaleString()}</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'Escape') {
+                closeTablet();
+            }
+        });
+    </script>
+</body>
+</html>
